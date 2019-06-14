@@ -12,6 +12,8 @@ public interface IUserService {
 
     User getUserById (long id);
 
+    User getUserWithMaxRating();
+
     List <User> getUsersWithFriend (long friendId);
 
     List <User> getAllUsers();

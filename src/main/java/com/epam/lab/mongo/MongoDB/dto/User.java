@@ -1,8 +1,6 @@
 package com.epam.lab.mongo.MongoDB.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 
 import java.time.LocalDate;
@@ -18,8 +16,9 @@ public class User {
     private Long id;
     private String name;
     private LocalDate birthDate;
-    private Map<Long, Boolean> friends = new HashMap<>();
-    private Set <Long> requests = new HashSet<>();
+    private Set<Friendship> friends = new HashSet<>();
+    private Set<Long> requests = new HashSet<>();
+    private int rating;
 
     public User() {
     }
@@ -33,5 +32,12 @@ public class User {
         this.id = id;
         this.name = name;
         this.birthDate = birthDate;
+    }
+
+    public User(Long id, String name, LocalDate birthDate, int rating) {
+        this.id = id;
+        this.name = name;
+        this.birthDate = birthDate;
+        this.rating = rating;
     }
 }

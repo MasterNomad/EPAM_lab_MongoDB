@@ -1,11 +1,10 @@
 package com.epam.lab.mongo.MongoDB.services;
 
+import com.epam.lab.mongo.MongoDB.dto.Friendship;
 import com.epam.lab.mongo.MongoDB.dto.User;
 import com.epam.lab.mongo.MongoDB.exceptions.NoSuchUserException;
-import com.epam.lab.mongo.MongoDB.repository.IUserRepository;
+import com.epam.lab.mongo.MongoDB.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -16,24 +15,33 @@ import java.util.*;
 public class UserService implements IUserService {
 
     @Autowired
-    private IUserRepository userRepository;
+    private UserRepository userRepository;
 
     @PostConstruct
     public void demoData() {
+        Random random = new Random();
+
         userRepository.deleteAll();
-        saveUser(new User(userRepository.count() + 1, "Heidi Bennett", LocalDate.now().minusYears(23)));
-        saveUser(new User(userRepository.count() + 1, "Lauren Rice ", LocalDate.now().minusYears(35).minusDays(65)));
-        saveUser(new User(userRepository.count() + 1, "Sally Roy", LocalDate.now().minusYears(18).minusDays(128)));
-        saveUser(new User(userRepository.count() + 1, "Lyle Olson ", LocalDate.now().minusYears(28).minusDays(256)));
+        saveUser(new User(userRepository.count() + 1, "Heidi Bennett",
+                LocalDate.now().minusYears(23), random.nextInt(100)));
+        saveUser(new User(userRepository.count() + 1, "Lauren Rice ",
+                LocalDate.now().minusYears(35).minusDays(65), random.nextInt(100)));
+        saveUser(new User(userRepository.count() + 1, "Sally Roy",
+                LocalDate.now().minusYears(18).minusDays(128), random.nextInt(100)));
+        saveUser(new User(userRepository.count() + 1, "Lyle Olson ",
+                LocalDate.now().minusYears(28).minusDays(256), random.nextInt(100)));
 
         addFriend(1, 2);
         addFriend(2, 1);
         addFriend(2, 3);
         addFriend(3, 1);
+        addFriend(1, 3);
+        addFriend(4, 3);
     }
 
     @Override
     public User saveUser(User user) {
+        user.setId(userRepository.count() + 1);
         return userRepository.save(user);
     }
 
@@ -42,17 +50,19 @@ public class UserService implements IUserService {
         User hostUser = getUserById(hostUserId);
         User friendUser = getUserById(friendUserId);
 
-        Map<Long, Boolean> hostFriends = hostUser.getFriends();
+        Set<Friendship> hostFriends = hostUser.getFriends();
         Set<Long> hostRequests = hostUser.getRequests();
-        Map<Long, Boolean> friendsFriends = friendUser.getFriends();
+
+        Set<Friendship> friendsFriends = friendUser.getFriends();
         Set<Long> friendRequests = friendUser.getRequests();
 
         if (hostRequests.contains(friendUserId)) {
-            hostFriends.put(friendUserId, true);
-            friendsFriends.put(hostUserId, true);
+            hostFriends.add(new Friendship(friendUserId, true));
+            friendsFriends.remove(new Friendship(hostUserId, false));
+            friendsFriends.add(new Friendship(hostUserId, true));
             hostRequests.remove(friendUserId);
         } else {
-            hostFriends.put(friendUserId, false);
+            hostFriends.add(new Friendship(friendUserId, false));
             friendRequests.add(hostUserId);
         }
 
@@ -68,20 +78,17 @@ public class UserService implements IUserService {
 
     @Override
     public User getUserById(long id) {
-        User user = userRepository.findById(id).orElse(null);
-        if (Objects.isNull(user)) {
-            throw new NoSuchUserException();
-        }
-        return user;
+        return userRepository.findById(id).orElseThrow(NoSuchUserException::new);
+    }
+
+    @Override
+    public User getUserWithMaxRating() {
+        return userRepository.findFirstByOrderByRatingDesc();
     }
 
     @Override
     public List<User> getUsersWithFriend(long friendId) {
-        User user = new User();
-        HashMap<Long, Boolean> friends = new HashMap<>();
-        friends.put(friendId, true);
-        user.setFriends(friends);
-        return userRepository.findAll(Example.of(user));
+        return userRepository.findByFriendsLike(new Friendship(friendId, true));
     }
 
     @Override

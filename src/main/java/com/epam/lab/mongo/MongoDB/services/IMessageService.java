@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface IMessageService {
 
-    void sendMessage (long senderId, long receiverId, String text);
+    void sendMessage(Message message);
 
     List <Message> getUsersConversation (long firstUserId, long secondUserId);
 
